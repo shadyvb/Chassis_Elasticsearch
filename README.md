@@ -41,6 +41,36 @@ ELASTICSEARCH_PORT // defaults to 9200
 We recommend using the [Head Chrome Extension](https://chrome.google.com/webstore/detail/elasticsearch-head/ffmkiejjmecolpfloofpjologoblkegm/) for debugging queries and exploring
 your indexes.
 
+### Custom Dictionary Files
+
+Elasticsearch supports using text files for providing stopwords, synonyms and if using the `analysis-kuromoji` plugin a custom user dictionary file for tokenisation.
+
+This extension ensures there is a directory at `/usr/share/elasticsearch/config` that is writable by the web server.
+
+To reference files added to that location you can use a relative path with the `config/` prefix. For example you could create an analyser using a custom stopwords file in the following way:
+
+```json
+{
+  "analysis": {
+    "filter": {
+      "custom_stopwords": {
+        "type": "stop",
+        "stopwords_path": "config/stopwords.txt"
+      }
+    },
+    "analyzer": {
+      "default": {
+        "type": "custom",
+        "filter": [
+          "custom_stopwords"
+        ],
+        "tokenizer": "standard"
+      }
+    }
+  }
+}
+```
+
 ## Configuration
 
 Chassis ElasticSearch provides some default options you can override from your
@@ -57,14 +87,33 @@ elasticsearch:
   timeout: 10
   instances:
     - 'es'
+  # You may want to increase the memory limit here if you are indexing images & files.
+  # Note you may also need to increase the memory limits for the VM and PHP also.
+  # Value is in Megabytes.
+  memory: 256
+  # You can override the default JVM options here as an array. For more information
+  # see the docs at https://www.elastic.co/guide/en/elasticsearch/reference/master/jvm-options.html
   jvm_options:
-    # You may want to increase the memory limits here if you are indexing images & files.
-    # Note you may also need to increase the memory limits for the VM and PHP also.
+    # Alternative way to configure the memory heap size settings at a more granular level.
     - '-Xms256m'
     - '-Xmx256m'
 ```
 
-#### Debugging Elasticsearch
+### A note on memory usage
+
+If you do increase the memory available to Elasticsearch you should generally ensure the VM itself has double that amount of memory to ensure all extensions and services run smoothly.
+
+The below example gives Elasticsearch 1Gig of memory and increases the VM memory to 2Gig.
+
+```yaml
+elasticsearch:
+  memory: 1024
+
+virtualbox:
+  memory: 2048
+```
+
+### Debugging Elasticsearch
 
 If you're having trouble with Elasticsearch there are a few common commands you can run inside Vagrant.
 
